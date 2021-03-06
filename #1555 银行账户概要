@@ -1,0 +1,67 @@
+Solution:
+
+step 1: gather all transactions for each user
+step 2: join with Users table, sum up total spending for each user, check if total spending is bigger than credit
+
+select
+    u.user_id,
+    user_name,
+    credit + ifnull(sum(amount),0) as credit,
+    if(credit + ifnull(sum(amount),0) >= 0, 'No', 'Yes') as credit_limit_breached
+    from Users u left join
+(select
+    paid_by as user_id,
+    -amount as amount
+    from Transactions
+union all
+select 
+    paid_to as user_id,
+    amount
+    from Transactions) a on u.user_id = a.user_id 
+    group by u.user_id, user_name
+    order by 1
+  
+用户表： Users
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| user_id      | int     |
+| user_name    | varchar |
+| credit       | int     |
++--------------+---------+
+user_id 是这个表的主键。
+表中的每一列包含每一个用户当前的额度信息。
+ 
+
+交易表：Transactions
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| trans_id      | int     |
+| paid_by       | int     |
+| paid_to       | int     |
+| amount        | int     |
+| transacted_on | date    |
++---------------+---------+
+trans_id 是这个表的主键。
+表中的每一列包含银行的交易信息。
+ID 为 paid_by 的用户给 ID 为 paid_to 的用户转账。
+ 
+
+力扣银行 (LCB) 帮助程序员们完成虚拟支付。我们的银行在表 Transaction 中记录每条交易信息，我们要查询每个用户的当前余额，并检查他们是否已透支（当前额度小于 0）。
+
+写一条 SQL 语句，查询：
+
+user_id 用户 ID
+user_name 用户名
+credit 完成交易后的余额
+credit_limit_breached 检查是否透支 （"Yes" 或 "No"）
+以任意顺序返回结果表。
+
+
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/bank-account-summary
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
