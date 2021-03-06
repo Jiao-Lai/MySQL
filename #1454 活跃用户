@@ -1,0 +1,47 @@
+select distinct
+    b.id,
+    a.name
+    from Accounts a join
+(select
+    id,
+    login_date,
+    datediff(login_date,'2020-01-01') -  row_number() over(partition by id order by login_date) as ref
+    from
+(select distinct id, login_date from Logins) a) b on a.id = b.id
+group by b.id, name, ref having count(*) >= 5
+order by 1
+
+
+表 Accounts:
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| id            | int     |
+| name          | varchar |
++---------------+---------+
+id 是该表主键.
+该表包含账户 id 和账户的用户名.
+ 
+
+表 Logins:
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| id            | int     |
+| login_date    | date    |
++---------------+---------+
+该表无主键, 可能包含重复项.
+该表包含登录用户的账户 id 和登录日期. 用户也许一天内登录多次.
+ 
+
+写一个 SQL 查询,  找到活跃用户的 id 和 name.
+
+活跃用户是指那些至少连续 5 天登录账户的用户.
+
+返回的结果表按照 id 排序.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/active-users
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
