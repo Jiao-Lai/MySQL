@@ -1,0 +1,39 @@
+Solution:
+
+step 1: query the first login date for each player_id, named as temp
+step 2: temp left join Activity table using player_id and event_date from Activity is the next day of first login date from temp. 
+        the rows with a match is player_id who logged in for two days in a row
+
+
+with temp as (
+    select player_id,
+           min(event_date) as fst
+           from Activity
+           group by 1
+)
+
+select
+    round(count(a.player_id)/count(temp.player_id),2) as fraction
+    from temp left join Activity a on temp.player_id = a.player_id and
+    datediff(event_date, temp.fst) = 1
+    
+Table: Activity
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| player_id    | int     |
+| device_id    | int     |
+| event_date   | date    |
+| games_played | int     |
++--------------+---------+
+（player_id，event_date）是此表的主键。
+这张表显示了某些游戏的玩家的活动情况。
+每一行是一个玩家的记录，他在某一天使用某个设备注销之前登录并玩了很多游戏（可能是 0）。
+ 
+
+编写一个 SQL 查询，报告在首次登录的第二天再次登录的玩家的比率，四舍五入到小数点后两位。换句话说，您需要计算从首次登录日期开始至少连续两天登录的玩家的数量，然后除以玩家总数。
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/game-play-analysis-iv
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
