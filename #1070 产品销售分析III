@@ -1,0 +1,52 @@
+Solution:
+
+    step 1: use window function to rank records by year for each product_id. note: row_number will give different results since product might be sold multiple times
+            during the first year.
+    step 2: select where rank = 1
+
+select distinct
+    product_id,
+    year as first_year,
+    quantity,
+    price
+    from
+(select
+    product_id,
+    year,
+    rank() over(partition by product_id order by year) as rk,
+    quantity,
+    price
+    from Sales) a
+    where rk = 1
+    order by 1
+    
+销售表 Sales：
+
++-------------+-------+
+| Column Name | Type  |
++-------------+-------+
+| sale_id     | int   |
+| product_id  | int   |
+| year        | int   |
+| quantity    | int   |
+| price       | int   |
++-------------+-------+
+sale_id 是此表的主键。
+product_id 是产品表的外键。
+请注意，价格是按每单位计的。
+产品表 Product：
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| product_id   | int     |
+| product_name | varchar |
++--------------+---------+
+product_id 是此表的主键。
+ 
+
+编写一个 SQL 查询，选出每个销售产品的 第一年 的 产品 id、年份、数量 和 价格。
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/product-sales-analysis-iii
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
