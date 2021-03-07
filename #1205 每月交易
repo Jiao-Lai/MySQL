@@ -1,0 +1,65 @@
+Solution:
+    step 1: union chargeback records with approve/decline records
+    step 2: group by month and country, sum the number of records and amount for state 'approved' and 'charge_back', keep those having at least one non-zero summation.
+
+
+select
+    left(trans_date, 7) as month,
+    country,
+    sum(if(state = 'approved',1,0)) as approved_count,
+    sum(if(state = 'approved', amount, 0)) as approved_amount,
+    sum(if(state = 'charge_back',1,0)) as chargeback_count,
+    sum(if(state = 'charge_back', amount, 0)) as chargeback_amount
+    from
+(select
+    trans_id as id,
+    country,
+    'charge_back' as state,
+    amount,
+    c.trans_date
+    from Chargebacks c join Transactions t on c.trans_id = t.id 
+union
+select
+    *
+    from Transactions ) a
+    group by 1, 2
+    having sum(if(state = 'approved',1,0)) >0 or sum(if(state = 'approved', amount, 0)) > 0 or sum(if(state = 'charge_back',1,0)) > 0 or sum(if(state = 'charge_back', amount, 0)) > 0
+    
+Transactions 记录表
+
++----------------+---------+
+| Column Name    | Type    |
++----------------+---------+
+| id             | int     |
+| country        | varchar |
+| state          | enum    |
+| amount         | int     |
+| trans_date     | date    |
++----------------+---------+
+id 是这个表的主键。
+该表包含有关传入事务的信息。
+状态列是类型为 [approved（已批准）、declined（已拒绝）] 的枚举。
+ 
+
+Chargebacks 表
+
++----------------+---------+
+| Column Name    | Type    |
++----------------+---------+
+| trans_id       | int     |
+| charge_date    | date    |
++----------------+---------+
+退单包含有关放置在事务表中的某些事务的传入退单的基本信息。
+trans_id 是 transactions 表的 id 列的外键。
+每项退单都对应于之前进行的交易，即使未经批准。
+ 
+
+编写一个 SQL 查询，以查找每个月和每个国家/地区的已批准交易的数量及其总金额、退单的数量及其总金额。
+
+注意：在您的查询中，给定月份和国家，忽略所有为零的行。
+
+
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/monthly-transactions-ii
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
