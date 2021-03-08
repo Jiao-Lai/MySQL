@@ -1,0 +1,44 @@
+step 1: use window function to get max salary within each company
+step 2: calculate after tax salary based on max salary
+
+SELECT
+    company_id,
+    employee_id,
+    employee_name,
+    ROUND(CASE WHEN max_salary < 1000 THEN salary
+         WHEN max_salary BETWEEN 1000 AND 10000 THEN 0.76*salary
+         ELSE 0.51*salary 
+    END, 0) AS salary
+FROM
+(SELECT
+    *,
+    max(salary) over(PARTITION BY company_id) AS max_salary
+FROM Salaries) a 
+ORDER BY 1, 2
+
+Table Salaries:
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| company_id    | int     |
+| employee_id   | int     |
+| employee_name | varchar |
+| salary        | int     |
++---------------+---------+
+(company_id, employee_id) is the primary key for this table.
+This table contains the company id, the id, the name and the salary for an employee.
+ 
+
+Write an SQL query to find the salaries of the employees after applying taxes.
+
+The tax rate is calculated for each company based on the following criteria:
+
+0% If the max salary of any employee in the company is less than 1000$.
+24% If the max salary of any employee in the company is in the range [1000, 10000] inclusive.
+49% If the max salary of any employee in the company is greater than 10000$.
+Return the result table in any order. Round the salary to the nearest integer.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/calculate-salaries
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
