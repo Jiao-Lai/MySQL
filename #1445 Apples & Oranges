@@ -1,0 +1,26 @@
+SELECT
+    s1.sale_date,
+    s1.sold_num - s2.sold_num as diff
+FROM Sales s1 join Sales s2 on s1.sale_date = s2.sale_date and s1.fruit = 'apples' and s2.fruit = 'oranges'
+
+
+Table: Sales
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| sale_date     | date    |
+| fruit         | enum    | 
+| sold_num      | int     | 
++---------------+---------+
+(sale_date,fruit) is the primary key for this table.
+This table contains the sales of "apples" and "oranges" sold each day.
+ 
+
+Write an SQL query to report the difference between number of apples and oranges sold each day.
+
+Return the result table ordered by sale_date in format ('YYYY-MM-DD').
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/apples-oranges
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
