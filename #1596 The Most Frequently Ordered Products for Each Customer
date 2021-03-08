@@ -1,0 +1,76 @@
+step 1: count the number of times each customer purchases each product
+step 2: get the most frequent purchased product for each customer
+step 3: join products table to get the name of product
+
+WITH temp as (SELECT
+    customer_id,
+    product_id,
+    count(*) as cnt 
+FROM Orders
+GROUP BY 1, 2
+)
+
+SELECT
+    customer_id,
+    p.product_id,
+    product_name
+FROM
+(SELECT
+    customer_id,
+    product_id 
+FROM temp
+WHERE (customer_id, cnt) in
+(SELECT 
+    customer_id,
+    max(cnt) as max_cnt
+FROM temp
+GROUP BY 1))a JOIN Products p on a.product_id = p.product_id
+ORDER BY 1, 2
+
+Table: Customers
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| customer_id   | int     |
+| name          | varchar |
++---------------+---------+
+customer_id is the primary key for this table.
+This table contains information about the customers.
+ 
+
+Table: Orders
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| order_id      | int     |
+| order_date    | date    |
+| customer_id   | int     |
+| product_id    | int     |
++---------------+---------+
+order_id is the primary key for this table.
+This table contains information about the orders made by customer_id.
+No customer will order the same product more than once in a single day.
+ 
+
+Table: Products
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| product_id    | int     |
+| product_name  | varchar |
+| price         | int     |
++---------------+---------+
+product_id is the primary key for this table.
+This table contains information about the products.
+ 
+
+Write an SQL query to find the most frequently ordered product(s) for each customer.
+
+The result table should have the product_id and product_name for each customer_id who ordered at least one order. Return the result table in any order.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/the-most-frequently-ordered-products-for-each-customer
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
