@@ -1,0 +1,30 @@
+SELECT
+    min(log_id) as start_id,
+    max(log_id) as end_id
+FROM (
+    SELECT
+        log_id,
+        log_id - row_number() over(ORDER BY log_id) as ref
+    FROM Logs
+)a
+GROUP BY ref
+
+Table: Logs
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| log_id        | int     |
++---------------+---------+
+id is the primary key for this table.
+Each row of this table contains the ID in a log Table.
+
+Since some IDs have been removed from Logs. Write an SQL query to find the start and end number of continuous ranges in table Logs.
+
+Order the result table by start_id.
+
+
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/find-the-start-and-end-number-of-continuous-ranges
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
