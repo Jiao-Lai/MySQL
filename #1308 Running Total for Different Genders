@@ -1,0 +1,28 @@
+SELECT
+    gender,
+    day,
+    sum(score_points) over(PARTITION BY gender ORDER BY day) as total
+FROM Scores 
+ORDER BY 1, 2
+
+Table: Scores
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| player_name   | varchar |
+| gender        | varchar |
+| day           | date    |
+| score_points  | int     |
++---------------+---------+
+(gender, day) is the primary key for this table.
+A competition is held between females team and males team.
+Each row of this table indicates that a player_name and with gender has scored score_point in someday.
+Gender is 'F' if the player is in females team and 'M' if the player is in males team.
+ 
+
+Write an SQL query to find the total score for each gender at each day.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/running-total-for-different-genders
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
