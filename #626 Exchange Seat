@@ -1,0 +1,28 @@
+Solution:
+    Switch seat id instead of seat.
+    If seat id is odd, then change seat id as id + 1.
+    If seat id is even, then change seat id as id - 1.
+    Note: If the max seat id is odd, then this student keeps his/her seat id.
+
+
+SELECT
+    CASE WHEN id%2 = 1 THEN if(id = (SELECT max(id) FROM seat), id, id + 1 )
+         ELSE id - 1
+    END AS id,
+    student  
+FROM seat
+ORDER BY 1
+
+Mary is a teacher in a middle school and she has a table seat storing students' names and their corresponding seat ids.
+
+The column id is continuous increment.
+
+Mary wants to change seats for the adjacent students.
+
+Can you write a SQL query to output the result for Mary?
+
+
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/exchange-seats
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
