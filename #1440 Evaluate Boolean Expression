@@ -1,0 +1,54 @@
+step 1: join Variables and Expressions to get the value of left_operand and right_operand
+step 2: determine if boolean expression is true 
+
+SELECT
+    left_operand,
+    operator,
+    right_operand,
+    CASE WHEN x > y AND operator = '>' THEN 'true'
+         WHEN x = y AND operator = '=' THEN 'true'
+         WHEN x < y AND operator = '<' THEN 'true'
+         ELSE 'false'
+    END as value
+FROM
+(SELECT
+    v1.value as x,
+    left_operand,
+    operator,
+    right_operand,
+    v2.value as y
+FROM Variables v1 join Expressions e join Variables v2 
+    ON v1.name = e.left_operand and v2.name = e.right_operand) a
+    
+Table Variables:
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| name          | varchar |
+| value         | int     |
++---------------+---------+
+name is the primary key for this table.
+This table contains the stored variables and their values.
+ 
+
+Table Expressions:
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| left_operand  | varchar |
+| operator      | enum    |
+| right_operand | varchar |
++---------------+---------+
+(left_operand, operator, right_operand) is the primary key for this table.
+This table contains a boolean expression that should be evaluated.
+operator is an enum that takes one of the values ('<', '>', '=')
+The values of left_operand and right_operand are guaranteed to be in the Variables table.
+ 
+
+Write an SQL query to evaluate the boolean expressions in Expressions table.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/evaluate-boolean-expression
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
