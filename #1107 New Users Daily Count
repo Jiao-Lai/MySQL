@@ -1,0 +1,35 @@
+step 1: get first login date for each user
+step 2: for each first login date within 90 days, calculate number of users whose first login date is that day
+
+SELECT
+    fst AS login_date,
+    count(user_id) AS user_count
+FROM
+(SELECT
+    user_id,
+    MIN(activity_date) AS fst
+FROM Traffic
+WHERE activity = 'login'
+GROUP BY 1) a
+WHERE DATEDIFF('2019-06-30', fst) <= 90
+GROUP BY 1
+ORDER BY 1
+
+Table: Traffic
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| user_id       | int     |
+| activity      | enum    |
+| activity_date | date    |
++---------------+---------+
+There is no primary key for this table, it may have duplicate rows.
+The activity column is an ENUM type of ('login', 'logout', 'jobs', 'groups', 'homepage').
+ 
+
+Write an SQL query that reports for every date within at most 90 days from today, the number of users that logged in for the first time on that date. Assume today is 2019-06-30.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/new-users-daily-count
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
