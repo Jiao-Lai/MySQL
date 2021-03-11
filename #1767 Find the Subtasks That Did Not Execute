@@ -1,0 +1,52 @@
+step 1: create a column containing consecutive number from 1 to max(subtasks_count)
+step 2: join with table tasks to get subtask_id for each task_id
+step 3: select from above table where is missing in Executed
+
+WITH RECURSIVE id AS (
+    SELECT 1 AS subtask_id UNION ALL SELECT subtask_id + 1 AS subtask_id FROM id WHERE subtask_id < (SELECT MAX(subtasks_count) FROM tasks)
+)
+
+SELECT
+    task_id,
+    subtask_id 
+FROM  
+(
+SELECT
+    task_id,
+    subtask_id 
+FROM tasks t JOIN id ON t.subtasks_count >= subtask_id
+) a 
+WHERE (task_id, subtask_id) NOT IN (SELECT * FROM Executed)
+
+
+Table: Tasks
+
++----------------+---------+
+| Column Name    | Type    |
++----------------+---------+
+| task_id        | int     |
+| subtasks_count | int     |
++----------------+---------+
+task_id is the primary key for this table.
+Each row in this table indicates that task_id was divided into subtasks_count subtasks labelled from 1 to subtasks_count.
+It is guaranteed that 2 <= subtasks_count <= 20.
+ 
+
+Table: Executed
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| task_id       | int     |
+| subtask_id    | int     |
++---------------+---------+
+(task_id, subtask_id) is the primary key for this table.
+Each row in this table indicates that for the task task_id, the subtask with ID subtask_id was executed successfully.
+It is guaranteed that subtask_id <= subtasks_count for each task_id.
+ 
+
+Write an SQL query to report the IDs of the missing subtasks for each task_id.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/find-the-subtasks-that-did-not-execute
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
