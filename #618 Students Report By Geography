@@ -1,0 +1,42 @@
+step 1: query student from each continent, create a reference column recording their order by name within continent
+step 2: join above tables using reference column
+
+SELECT
+    America,
+    Asia,
+    Europe
+FROM
+(SELECT
+    name AS 'America',
+    ROW_NUMBER() OVER(ORDER BY name) AS ref
+FROM student
+WHERE continent = 'America') a LEFT JOIN
+(SELECT
+    name AS 'Asia',
+    ROW_NUMBER() OVER(ORDER BY name) AS ref
+FROM student
+WHERE continent = 'Asia') b ON a.ref = b.ref 
+LEFT JOIN
+(SELECT
+    name AS 'Europe',
+    ROW_NUMBER() OVER(ORDER BY name) AS ref
+FROM student
+WHERE continent = 'Europe') c ON a.ref = c.ref
+
+
+A U.S graduate school has students from Asia, Europe and America. The students' location information are stored in table student as below.
+ 
+
+| name   | continent |
+|--------|-----------|
+| Jack   | America   |
+| Pascal | Europe    |
+| Xi     | Asia      |
+| Jane   | America   |
+ 
+
+Pivot the continent column in this table so that each name is sorted alphabetically and displayed underneath its corresponding continent. The output headers should be America, Asia and Europe respectively. It is guaranteed that the student number from America is no less than either Asia or Europe.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/students-report-by-geography
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
