@@ -1,0 +1,66 @@
+step 1: create table install recording the install date of each player_id
+step 2: install_dt left join activity to get playe who also logged in the next day
+step 3: count to get installs and retention rate
+
+with install as (
+select
+    player_id,
+    min(event_date) as install_dt
+from activity
+group by 1)
+
+select
+    install_dt,
+    count(*) as installs,
+    round(count(distinct a.player_id)/count(*),2) as Day1_retention
+from install i left join activity a on a.player_id = i.player_id and datediff(a.event_date, i.install_dt) = 1 group by 1
+
+R code:
+Activity <- data.frame(player_id = c(1, 1, 2, 3, 3),
+                       device_id = c(2, 2, 3, 1, 4),
+                       event_date = c('2016-03-01', '2016-03-02', '2017-06-25', '2016-03-01', '2016-07-03'),
+                       games_played = c(5, 6, 1, 0, 5)
+)
+
+install <- Activity %>%
+           mutate(event_date = as.Date(event_date)) %>%
+           group_by(player_id) %>%
+           summarize(install_dt = min(event_date))
+           
+retention <- install %>% left_join(Activity, by = 'player_id')  %>%
+         mutate(daydiff = floor(difftime(event_date, install_dt, units = 'days'))) %>%
+         filter(daydiff == 1) %>%
+         select(player_id, install_dt)
+
+install %>%
+  group_by(install_dt) %>%
+  summarize(installs = n()) %>%
+  left_join(retention, by = 'install_dt') %>%
+  group_by(install_dt) %>%
+  mutate(Day1_retention = round(sum(!is.na(player_id))/installs,2)) %>%
+  select(-player_id)
+  
+Table: Activity
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| player_id    | int     |
+| device_id    | int     |
+| event_date   | date    |
+| games_played | int     |
++--------------+---------+
+(player_id, event_date) is the primary key of this table.
+This table shows the activity of players of some game.
+Each row is a record of a player who logged in and played a number of games (possibly 0) before logging out on some day using some device.
+ 
+
+We define the install date of a player to be the first login day of that player.
+
+We also define day 1 retention of some date X to be the number of players whose install date is X and they logged back in on the day right after X, divided by the number of players whose install date is X, rounded to 2 decimal places.
+
+Write an SQL query that reports for each install date, the number of players that installed the game on that day and the day 1 retention.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/game-play-analysis-v
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
