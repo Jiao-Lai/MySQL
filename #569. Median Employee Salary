@@ -16,6 +16,15 @@ from
 from Employee) a 
 where rk between cnt/2 and cnt/2 + 1 
 
+R code:
+median<- salary %>% 
+  group_by(Company) %>%
+  summarize(median_salary = median(Salary)) %>%
+  ungroup()
+
+median %>% inner_join(salary, by = c('Company' = 'Company', 'median_salary' = 'Salary')) %>%
+  select(Id, Company, Salary = median_salary)
+
 Question:
 The Employee table holds all employees. The employee table has three columns: Employee Id, Company Name, and Salary.
 Write a SQL query to find the median salary of each company. Bonus points if you can solve it without using any built-in SQL functions.
