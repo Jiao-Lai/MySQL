@@ -1,0 +1,66 @@
+step 1: select records where client is not banned and driver is not banned, and date between '2013-10-01' and '2013-10-03'
+step 2: calculate cancellation rate for each date
+ 
+select
+    Request_at as Day,
+    round(sum(if(Status != 'completed', 1, 0))/count(*), 2) as 'Cancellation Rate'
+from Trips
+where Client_Id not in (select Users_Id from Users where Banned = 'Yes')
+and Driver_Id not in (select Users_Id from Users where Banned = 'Yes')
+and Request_at between '2013-10-01' and '2013-10-03'
+group by 1
+
+R code:
+Trips <- data.frame(Client_Id = c(1, 2, 3, 4, 1, 2, 3, 2, 3, 4),
+                    Driver_Id = c(10, 11, 12, 13, 10, 11, 12, 12, 10, 13),
+                    City_Id = c(1, 1, 6, 6, 1, 6, 6, 12, 12, 12),
+                    Status = c('completed', 'cancelled_by_driver', 'completed', 'cancelled_by_client',
+                               'completed', 'completed', 'completed', 'completed', 'completed', 'cancelled_by_driver'),
+                    Request_at = c('2013-10-01', '2013-10-01', '2013-10-01', '2013-10-01', '2013-10-02', '2013-10-02','2013-10-02',
+                                   '2013-10-03', '2013-10-03', '2013-10-03')
+)
+Users <- data.frame(Users_Id = c(1, 2, 3, 4, 10, 11, 12, 13),
+                    Banned = c("No", 'Yes', "No", "No", "No", "No", "No", "No")
+)
+Trips$Request_at <- as.Date(Trips$Request_at)
+Users <- Users %>% filter(Banned == 'No') %>% select(Users_Id)
+Trips %>% filter(Client_Id %in% Users$Users_Id, Driver_Id %in% Users$Users_Id, Request_at <= '2013-10-03' & Request_at >= '2013-10-01') %>%
+  group_by(Request_at) %>%
+  summarize(Cancellation_Rate = round(sum(Status != 'completed')/n(),2))
+
+Table: Trips
+
++-------------+----------+
+| Column Name | Type     |
++-------------+----------+
+| Id          | int      |
+| Client_Id   | int      |
+| Driver_Id   | int      |
+| City_Id     | int      |
+| Status      | enum     |
+| Request_at  | date     |     
++-------------+----------+
+Id is the primary key for this table.
+The table holds all taxi trips. Each trip has a unique Id, while Client_Id and Driver_Id are foreign keys to the Users_Id at the Users table.
+Status is an ENUM type of (‘completed’, ‘cancelled_by_driver’, ‘cancelled_by_client’).
+ 
+
+Table: Users
+
++-------------+----------+
+| Column Name | Type     |
++-------------+----------+
+| Users_Id    | int      |
+| Banned      | enum     |
+| Role        | enum     |
++-------------+----------+
+Users_Id is the primary key for this table.
+The table holds all users. Each user has a unique Users_Id, and Role is an ENUM type of (‘client’, ‘driver’, ‘partner’).
+Status is an ENUM type of (‘Yes’, ‘No’).
+ 
+
+Write a SQL query to find the cancellation rate of requests with unbanned users (both client and driver must not be banned) each day between "2013-10-01" and "2013-10-03".
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/trips-and-users
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
