@@ -1,0 +1,39 @@
+step 1: use window function to calculate sum of salary between 2 preceding and current row, create row_number to get most recent record for each employee
+step 2: drop most recent record
+
+select
+    Id,
+    Month,
+    Salary 
+from
+(select
+    Id,
+    Month,
+    sum(Salary) over(partition by Id order by Month rows between 2 preceding and current row) as Salary,
+    row_number() over(partition by Id order by Month desc) as rk 
+from Employee) a where rk != 1
+
+R code:
+Employee <- data.frame(Id = c(1, 2, 1, 2, 3, 1, 3, 1, 3),
+                       Month = c(1, 1, 2, 2, 2, 3, 3, 4, 4),
+                       Salary = c(20, 20, 30, 30, 40, 40, 60, 60, 70)
+)
+Employee %>% group_by(Id) %>%
+  arrange(desc(Month)) %>%
+  filter(row_number() != 1) %>%
+  arrange(Id, Month) %>%
+  mutate(l1 = lag(Salary, 1),
+         l2 = lag(Salary, 2)) %>%
+  replace_na(list(l1 = 0, l2 = 0)) %>%
+  mutate(total_salary = l1 + l2 + Salary) %>%
+  select(Id, Month, Salary = total_salary) %>%
+  arrange(Id, desc(Month))
+
+
+The Employee table holds the salary information in a year.
+
+Write a SQL to get the cumulative sum of an employee's salary over a period of 3 months but exclude the most recent month.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/find-cumulative-salary-of-an-employee
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
