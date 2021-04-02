@@ -1,0 +1,39 @@
+step 1: rank score for each exam in ascending and descending order
+step 2: select student_id which has highest or lowest score
+step 3: use left join to get records from student table where a match wasn't found
+step 4: drop student record where student didn't take any exam
+
+select
+    s.student_id,
+    s.student_name
+from student s left join 
+(select distinct student_id from
+(select
+    *,
+    rank() over(partition by exam_id order by score) as rk_asc,
+    rank() over(partition by exam_id order by score desc) as rk_desc
+from Exam) a 
+where rk_asc = 1 or rk_desc = 1) a
+on s.student_id = a.student_id where a.student_id is null
+and s.student_id in (select distinct student_id  from Exam)
+
+R code:
+student = data.frame( student_id = c(1, 2, 3, 4, 5),
+                      student_name = c('A', "B", "C", "D", "E")
+)
+exam = data.frame(exam_id = c(10, 10, 10, 20, 30, 30, 30, 40, 40, 40),
+                  student_id = c(1, 2, 3, 1, 1, 3, 4, 1, 2, 4),
+                  score = c(70, 80, 90, 80, 70, 80, 90, 60, 70, 80)
+)
+low <- exam %>% group_by(exam_id) %>% filter(dense_rank(score) == 1)
+high <- exam %>% group_by(exam_id) %>% filter(dense_rank(desc(score)) == 1)
+non_quiet <- data.frame(student_id = unique(c(high$student_id, low$student_id)))
+student %>% anti_join(non_quiet) %>% inner_join(exam) %>% select(student_id, student_name) %>% distinct()
+
+A "quite" student is the one who took at least one exam and didn't score neither the high score nor the low score.
+Write an SQL query to report the students (student_id, student_name) being "quiet" in ALL exams.
+Don't return the student who has never taken any exam. Return the result table ordered by student_id.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/find-the-quiet-students-in-all-exams
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
