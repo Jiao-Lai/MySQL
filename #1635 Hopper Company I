@@ -1,0 +1,121 @@
+step 1: create a month table 
+step 2: get driver_id, month joined in for records happened in 2020. set month as 1 if joined before 2020
+step 3: get ride_id, month for accepted rides in 2020
+step 4: month left join the two tables from step 2 and step 3, get active_drivers and accepted_rides per month
+step 5: use window function to calculate cumulative active_drivers
+note: use distinct while counting active_drivers and accepted_rides 
+
+# Write your MySQL query statement below
+with month as (
+select 1 as month union all select 2 as month union all select 3 as month union all select 4 as month union all select 5 as month union all select 6 as month union all select 7 as month union all select 8 as month union all select 9 as month union all select 10 as month union all select 11 as month union all select 12 as month)
+
+select
+    month,
+    sum(active_drivers) over(order by month) as active_drivers,
+    accepted_rides
+from
+(select
+    m.month,
+    count(distinct driver_id) as active_drivers,
+    count(distinct ride_id) as accepted_rides
+from month m left join
+(select
+    driver_id,
+    case when year(join_date) < 2020 then 1
+    else month(join_date)
+    end as month
+from drivers
+where year(join_date) <= 2020) a on m.month = a.month 
+left join
+(select 
+    month(requested_at) as month, 
+    r.ride_id from Rides r join AcceptedRides ar on r.ride_id = ar.ride_id 
+    where year(requested_at) = 2020) b on m.month = b.month
+    group by 1) a
+    
+R code:
+library(dplyr)
+library(tidyr)
+library(lubridate)
+month <- data.frame(month = seq(1:12))
+drivers <- data.frame(driver_id = c(10, 8, 5, 7, 4, 1, 6),
+                      join_date = c('2019-12-10', '2020-1-13', '2020-2-16', '2020-3-8', '2020-5-17', '2020-10-24', '2021-1-5')
+)
+rides <- data.frame(ride_id = c(6, 1, 10, 19, 3, 13, 7, 17, 20, 5, 2, 11, 15, 12, 14),
+                    requested_at = c('2019-12-9', '2020-2-9', '2020-3-4', '2020-4-6', '2020-6-3', '2020-6-22',
+                                     '2020-7-16', '2020-8-25', '2020-11-2', '2020-11-9', '2020-12-9', '2021-1-11',
+                                     '2021-1-17', '2021-1-19', '2021-1-27')
+)
+AcceptedRides <- data.frame(ride_id = c(10, 12, 7, 17, 20, 5, 2 , 11, 15, 12, 14),
+                            driver_id = c(10, 10, 8, 7, 1, 7, 4, 8, 8, 8, 1)
+  
+)
+active_driver<- drivers %>% 
+  filter(as.numeric(substr(join_date, start = 1, stop = 4)) <= 2020 ) %>%
+  mutate(month = if_else(as.numeric(substr(join_date, start = 1, stop = 4)) == 2020,month(join_date), 1)) %>%
+  group_by(month) %>%
+  mutate(active_driver = n_distinct(driver_id)) %>%
+  select(month, active_driver) %>%
+  distinct()
+accepted_ride <- rides %>% inner_join(AcceptedRides, by = 'ride_id') %>% 
+  filter(year(requested_at) == 2020) %>%
+  mutate(month = month(requested_at)) %>%
+  group_by(month) %>%
+  mutate(accepted_rides = n_distinct(ride_id)) %>%
+  select(month, accepted_rides) %>%
+  distinct()
+month %>% left_join(active_driver, by = 'month') %>%
+  left_join(accepted_ride, by = 'month') %>%
+  replace_na(list(active_driver = 0, accepted_rides = 0)) %>%
+  mutate(active_driver_cum = cumsum(active_driver)) %>%
+  select(-accepted_rides)
+
+Table: Drivers
+
++-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| driver_id   | int     |
+| join_date   | date    |
++-------------+---------+
+driver_id is the primary key for this table.
+Each row of this table contains the driver's ID and the date they joined the Hopper company.
+ 
+
+Table: Rides
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| ride_id      | int     |
+| user_id      | int     |
+| requested_at | date    |
++--------------+---------+
+ride_id is the primary key for this table.
+Each row of this table contains the ID of a ride, the user's ID that requested it, and the day they requested it.
+There may be some ride requests in this table that were not accepted.
+ 
+
+Table: AcceptedRides
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| ride_id       | int     |
+| driver_id     | int     |
+| ride_distance | int     |
+| ride_duration | int     |
++---------------+---------+
+ride_id is the primary key for this table.
+Each row of this table contains some information about an accepted ride.
+It is guaranteed that each accepted ride exists in the Rides table.
+ 
+
+Write an SQL query to report the following statistics for each month of 2020:
+
+The number of drivers currently with the Hopper company by the end of the month (active_drivers).
+The number of accepted rides in that month (accepted_rides).
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/hopper-company-queries-i
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
