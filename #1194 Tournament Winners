@@ -1,0 +1,85 @@
+step 1: use union all to get the score for each player in each match
+step 2: calculate total score for each player
+step 3: Players table left join table from step 2, get rank within each group
+step 4: select the player in each group with highest rank
+
+select 
+    group_id,
+    player_id 
+from
+(select
+    group_id,
+    p.player_id,
+    ifnull(score, 0) as score,
+    rank() over(partition by group_id order by score desc, player_id) as rk
+from Players p left join
+(select
+    player_id,
+    sum(score) as score 
+from
+(select
+    first_player as player_id,
+    first_score as score 
+from Matches
+union all
+select 
+    second_player as player_id,
+    second_score as score 
+from Matches) a 
+group by 1) a on p.player_id = a.player_id) a where rk =1
+order by group_id
+
+R code:
+Players <- data.frame(player_id = c(15, 25, 30, 45, 10, 35, 50, 20, 40),
+                      group_id = c(1, 1, 1, 1, 2, 2, 2, 3, 3)
+)
+Matches <- data.frame(match_id = c(1, 2, 3, 4, 5),
+                      first_player = c(15, 30, 30, 40, 35),
+                      second_player = c(45, 25, 15, 20, 50),
+                      first_score = c(3, 1, 2, 5, 1),
+                      second_score = c(0, 2, 0, 2, 1)
+)
+first <- Matches %>% select(player_id = first_player, score = first_score) 
+second <- Matches %>% select(player_id = second_player, score = second_score)
+first %>% bind_rows(second) %>% group_by(player_id) %>% summarize(tot_score = sum(score)) %>% 
+  inner_join(Players, by = 'player_id') %>%
+  group_by(group_id) %>%
+  arrange(desc(tot_score), player_id) %>%
+  filter(row_number() == 1) %>%
+  arrange(group_id) %>%
+  select(group_id, player_id)
+
+Table: Players
+
++-------------+-------+
+| Column Name | Type  |
++-------------+-------+
+| player_id   | int   |
+| group_id    | int   |
++-------------+-------+
+player_id is the primary key of this table.
+Each row of this table indicates the group of each player.
+Table: Matches
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| match_id      | int     |
+| first_player  | int     |
+| second_player | int     | 
+| first_score   | int     |
+| second_score  | int     |
++---------------+---------+
+match_id is the primary key of this table.
+Each row is a record of a match, first_player and second_player contain the player_id of each match.
+first_score and second_score contain the number of points of the first_player and second_player respectively.
+You may assume that, in each match, players belongs to the same group.
+ 
+
+The winner in each group is the player who scored the maximum total points within the group. In the case of a tie, the lowest player_id wins.
+
+Write an SQL query to find the winner in each group.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/tournament-winners
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
