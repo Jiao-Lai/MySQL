@@ -1,0 +1,76 @@
+step 1: rank orders of each seller by order_date
+step 2: join with Users and Items to get the item_brand for second order of each seller
+step 3: determine if favorite_brand is the brand for second order
+
+select
+    user_id as seller_id,
+    case when favorite_brand = item_brand then 'yes'
+         else 'no'
+    end as 2nd_item_fav_brand
+from Users u left join 
+(select
+    seller_id,
+    item_id,
+    row_number() over(partition by seller_id order by order_date) as rk
+from orders) a on u.user_id = a.seller_id and rk = 2 
+left join Items i on a.item_id = i.item_id
+
+R code:
+Users <- data.frame(user_id = c(1, 2, 3, 4),
+                    favorite_brand = c('Lenovo', 'Samsung', 'LG', 'HP')
+)
+Orders <- data.frame(order_date = c('2019-08-01', '2019-08-02', '2019-08-03', '2019-08-04', '2019-08-04', '2019-08-05'),
+                     item_id = c(4, 2, 3, 1, 1, 2),
+                     seller_id = c(2, 3, 3, 2, 4, 4)
+)
+Items <- data.frame(item_id = c(1, 2, 3, 4),
+                    item_brand = c('Samsung', 'Lenovo', 'LG', 'HP')
+  
+)
+Orders %>% group_by(seller_id) %>% arrange(order_date) %>% filter(row_number() == 2) %>%
+  inner_join(Items, by = 'item_id') %>% right_join(Users, by = c('seller_id' = 'user_id')) %>%
+  mutate(second_item_fav_brand = if_else(item_brand != favorite_brand | is.na(item_brand), 'no', 'yes')) %>%
+  select(seller_id, second_item_fav_brand)
+
+
+Table: Users
+
++----------------+---------+
+| Column Name    | Type    |
++----------------+---------+
+| user_id        | int     |
+| join_date      | date    |
+| favorite_brand | varchar |
++----------------+---------+
+user_id is the primary key of this table.
+This table has the info of the users of an online shopping website where users can sell and buy items.
+Table: Orders
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| order_id      | int     |
+| order_date    | date    |
+| item_id       | int     |
+| buyer_id      | int     |
+| seller_id     | int     |
++---------------+---------+
+order_id is the primary key of this table.
+item_id is a foreign key to the Items table.
+buyer_id and seller_id are foreign keys to the Users table.
+Table: Items
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| item_id       | int     |
+| item_brand    | varchar |
++---------------+---------+
+item_id is the primary key of this table.
+ 
+
+Write an SQL query to find for each user, whether the brand of the second item (by date) they sold is their favorite brand. If a user sold less than two items, report the answer for that user as no.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/market-analysis-ii
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
