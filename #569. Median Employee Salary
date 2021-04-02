@@ -1,0 +1,33 @@
+step 1: count the number of employees in each company, and creat a new column of their rank within company
+step 2: select record with median salary given the definition of median
+
+Solution:
+select
+    Id,
+    Company, 
+    Salary
+from
+(select
+    Id,
+    Company, 
+    Salary,
+    count(*) over(partition by Company) as cnt,
+    row_number() over(partition by Company order by Salary) as rk
+from Employee) a 
+where rk between cnt/2 and cnt/2 + 1 
+
+Question:
+The Employee table holds all employees. The employee table has three columns: Employee Id, Company Name, and Salary.
+Write a SQL query to find the median salary of each company. Bonus points if you can solve it without using any built-in SQL functions.
+
+
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/median-employee-salary
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
+
+
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/median-employee-salary
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
