@@ -1,0 +1,80 @@
+step 1: keep records in 2019, create a ref column for both failed and succeeded recording difference between date and row_number, consecutive dates have same ref
+step 2: union failed and succeeded, differentiate records from these two table with period_state
+step 3: group by period_state and ref, use min and max to select start_date and end_date
+
+select 
+    period_state, 
+    min(newdate) as start_date, 
+    max(newdate) as end_date 
+from
+((select 
+    fail_date as newdate, 
+    "failed" as period_state, 
+    subdate(fail_date,row_number() over(order by fail_date))  as ref 
+from Failed 
+where year(fail_date) = 2019 order by 1)
+union all
+(select 
+    success_date as newdate, 
+    "succeeded" as period_state, 
+    subdate(success_date,row_number() over(order by success_date)) as ref 
+from Succeeded where year(success_date) = 2019 order by 1)) a 
+group by period_state, ref 
+order by 2
+
+R code:
+failed <- data.frame(fail_date = c('2018-12-28', '2018-12-29', '2019-01-04', '2019-01-05')
+)
+succeeded <- data.frame(success_date = c('2018-12-30', '2018-12-31', '2019-01-01', '2019-01-02', '2019-01-03', '2019-01-06')
+)
+
+failed_new <- failed %>% 
+  filter(substr(fail_date, start = 1, stop = 4) == '2019') %>% 
+  mutate(period_state = 'failed') %>% 
+  arrange(fail_date) %>%
+  mutate(ref = as.numeric(substr(fail_date, start = 9, stop = 10)) - row_number()) %>%
+  rename(date = fail_date)
+  
+succeeded_new <- succeeded %>% 
+  filter(substr(success_date, start = 1, stop = 4) == '2019') %>% 
+  mutate(period_state = 'succeeded') %>% 
+  arrange(success_date) %>%
+  mutate(ref = as.numeric(substr(success_date, start = 9, stop = 10)) - row_number()) %>%
+  rename(date = success_date)
+  
+failed_new %>% 
+  bind_rows(succeeded_new) %>% 
+  group_by(period_state, ref) %>% 
+  summarize(start_date = min(date),
+            end_date = max(date)) %>%
+  arrange(start_date) %>%
+  select(-ref)
+
+
+Table: Failed
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| fail_date    | date    |
++--------------+---------+
+Primary key for this table is fail_date.
+Failed table contains the days of failed tasks.
+Table: Succeeded
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| success_date | date    |
++--------------+---------+
+Primary key for this table is success_date.
+Succeeded table contains the days of succeeded tasks.
+ 
+
+A system is running one task every day. Every task is independent of the previous tasks. The tasks can fail or succeed.
+
+Write an SQL query to generate a report of period_state for each continuous interval of days in the period from 2019-01-01 to 2019-12-31.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/report-contiguous-dates
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
