@@ -1,0 +1,44 @@
+step 1: join Employee and Salary to get department_id for each record, calculate avg salary for each department on each pay date, and avg salary for the whole
+company on each pay date
+step 2: compare department avg and company avg, select distinct records
+
+select distinct
+    pay_month,
+    department_id,
+    case when dep_avg > com_avg then 'higher'
+         when dep_avg < com_avg then 'lower'
+         else 'same'
+    end as comparison
+from
+(select
+    department_id,
+    left(pay_date, 7) as pay_month,
+    avg(amount) over(partition by department_id, pay_date) as dep_avg,
+    avg(amount) over(partition by pay_date) as com_avg
+from salary s join employee e on s.employee_id = e.employee_id)a
+
+R code:
+salary <- data.frame(id = c(1:6),
+                     employee_id = c(1, 2, 3, 1, 2, 3),
+                     amount = c(9000, 6000, 10000, 7000, 6000, 8000),
+                     pay_date = c('2017-03-31', '2017-03-31', '2017-03-31', '2017-02-28', '2017-02-28', '2017-02-28')
+                     )
+employee <- data.frame(employee_id = c(1, 2, 3),
+                       department_id = c(1, 2, 2)
+)   
+salary %>% inner_join(employee, by = 'employee_id') %>%
+  group_by(department_id, pay_date) %>%
+  mutate(dep_avg = mean(amount)) %>%
+  ungroup() %>%
+  group_by(pay_date) %>%
+  mutate(com_avg = mean(amount),
+         comparison = if_else(dep_avg > com_avg,'higher', if_else(dep_avg < com_avg, 'lower', 'same'))) %>%
+  transmute(pay_month = substr(pay_date, start = 1, stop = 7), department_id, comparison) %>%
+  select(-pay_date) %>%
+  distinct()
+  
+Given two tables as below, write a query to display the comparison result (higher/lower/same) of the average salary of employees in a department to the company's average salary.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/average-salary-departments-vs-company
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
