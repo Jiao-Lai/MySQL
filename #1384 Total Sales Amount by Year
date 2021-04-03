@@ -1,0 +1,103 @@
+step 1: calculate total amount for year 2018, 2019, and 2020 separately
+step 2: union total sales from 2018, 2019, and 2020
+step 3: join with Product table to get product_name
+
+
+select
+    a.product_id,
+    product_name,
+    report_year,
+    total_amount
+from Product p join
+(select
+    product_id,
+    '2018' as report_year,
+    (datediff(if(year(period_end) > 2018, '2018-12-31', period_end), period_start) + 1)*average_daily_sales as total_amount
+from Sales where year(period_start) = 2018
+union all 
+select
+    product_id,
+    '2019' as report_year,
+    (datediff(if(year(period_end) > 2019, '2019-12-31', period_end), if(year(period_start) = 2019, period_start, '2019-01-01')) + 1) * average_daily_sales as total_amount
+from Sales where 2019 between year(period_start) and year(period_end)
+union all 
+select
+    product_id,
+    '2020' as report_year,
+    (datediff(period_end, if(year(period_start) < 2020, '2020-01-01', period_start)) + 1)*average_daily_sales as total_amount 
+from Sales 
+where year(period_end) = 2020)a on p.product_id = a.product_id
+order by 1, 3
+
+R code:
+Product <- data.frame(
+  product_id = c(1, 2, 3),
+  product_name = c('LC Phone', 'LC T-Shirt', 'LC Keychain')
+)
+
+Sales <- data.frame(
+  product_id = c(1, 2, 3),
+  period_start = c('2019-01-25', '2018-12-01', '2019-12-01'),
+  period_end = c('2019-02-28', '2020-01-01', '2020-01-31'),
+  average_daily_sales = c(100, 10, 1)
+)
+ Sales <- Sales %>% mutate(period_start = as.Date(period_start),
+                  period_end = as.Date(period_end))
+ Sales_2018 <- Sales %>% filter(year(period_start) == 2018) %>%
+   mutate(end_date = ifelse(year(period_end) > 2018, '2018-12-31', period_end),
+          start = period_start,
+          end_date = as.Date(end_date),
+          start = as.Date(start),
+          report_year = 2018,
+          total_amount = (floor(difftime(end_date, start, units = 'days')) + 1)*average_daily_sales)
+ Sales_2019 <- Sales %>% filter(year(period_start) <= 2019 & year(period_end) >= 2019) %>%
+   mutate(end_date = ifelse(year(period_end) > 2019, '2019-12-31', as.character(period_end)),
+          start = ifelse(year(period_start) < 2019, '2019-01-01', as.character(period_start)),
+          report_year = 2019,
+          end_date = as.Date(end_date),
+          start = as.Date(start),
+          total_amount = (floor(difftime(end_date, start, units = 'days')) + 1)*average_daily_sales  )
+ Sales_2020 <- Sales %>% filter(year(period_end) == 2020) %>%
+   mutate(end_date = period_end,
+          start = ifelse(year(period_start) == 2020, period_start, '2020-01-01'),
+          end_date = as.Date(end_date),
+          start = as.Date(start),
+          report_year = 2020,
+          total_amount = (floor(difftime(end_date, start, units = 'days')) + 1)*average_daily_sales  )
+ Sales_2018 %>%
+   bind_rows(Sales_2019, Sales_2020) %>%
+   select(product_id, report_year, total_amount) %>%
+   inner_join(Product, by = 'product_id') %>%
+   arrange(product_id, report_year)
+
+Table: Product
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| product_id    | int     |
+| product_name  | varchar |
++---------------+---------+
+product_id is the primary key for this table.
+product_name is the name of the product.
+ 
+
+Table: Sales
+
++---------------------+---------+
+| Column Name         | Type    |
++---------------------+---------+
+| product_id          | int     |
+| period_start        | date    |
+| period_end          | date    |
+| average_daily_sales | int     |
++---------------------+---------+
+product_id is the primary key for this table. 
+period_start and period_end indicates the start and end date for sales period, both dates are inclusive.
+The average_daily_sales column holds the average daily sales amount of the items for the period.
+
+Write an SQL query to report the Total sales amount of each item for each year, with corresponding product name, product_id, product_name and report_year.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/total-sales-amount-by-year
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
