@@ -1,0 +1,76 @@
+step 1: count how many transactions per customer per transaction day, create a column containing 0 to the max transaction count consecutively
+step 2: count how many transactions per customer per visit day
+step 3: left join table from step 1 with table from step 2 to get number of users per transactions_count
+
+with recursive cnt as (
+    select 0 as transactions_count union all select transactions_count + 1 as transactions_count from cnt where transactions_count <  (select max(cnt) from (select count(*) as cnt from Transactions group by user_id, transaction_date)a)
+)
+
+select
+    cnt.transactions_count,
+    count(user_id) as visits_count
+from cnt left join
+(select
+    v.user_id,
+    visit_date,
+    count(transaction_date) as transactions_count
+from Visits v left join Transactions t on v.user_id = t.user_id and v.visit_date = t.transaction_date
+group by 1, 2
+) a on a.transactions_count = cnt.transactions_count
+group by 1
+
+R code:
+Visits <- data.frame(
+  user_id = c(1, 2, 12, 19, 1, 2, 1, 7, 9, 8),
+  visit_date = c('2020-01-01', '2020-01-02', '2020-01-01', '2020-01-03', '2020-01-02',
+                 '2020-01-03', '2020-01-04', '2020-01-11', '2020-01-25', '2020-01-28')
+)
+Transactions <- data.frame(
+  user_id = c(1, 2, 7, 1, 9, 9, 8, 9),
+  transaction_date = c('2020-01-02', '2020-01-03', '2020-01-11', '2020-01-04', '2020-01-25',
+                       '2020-01-25', '2020-01-28', '2020-01-25'),
+  amount = c(120, 22, 232, 7, 33, 66, 1, 99)
+)
+cnt <- Transactions %>% group_by(user_id, transaction_date) %>% summarize(cnt = n())
+transaction_cnt <- data.frame(transaction_cnt = c(0:max(cnt$cnt)))
+Visits %>% left_join(Transactions, by = c('user_id', 'visit_date' = 'transaction_date')) %>%
+  group_by(user_id, visit_date) %>%
+  summarize(cnt = sum(!is.na(amount))) %>%
+  right_join(transaction_cnt, by = c('cnt' = 'transaction_cnt') ) %>%
+  group_by(cnt) %>%
+  summarize(visits_count = sum(!is.na(user_id)))  
+
+
+Table: Visits
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| user_id       | int     |
+| visit_date    | date    |
++---------------+---------+
+(user_id, visit_date) is the primary key for this table.
+Each row of this table indicates that user_id has visited the bank in visit_date.
+ 
+
+Table: Transactions
+
++------------------+---------+
+| Column Name      | Type    |
++------------------+---------+
+| user_id          | int     |
+| transaction_date | date    |
+| amount           | int     |
++------------------+---------+
+There is no primary key for this table, it may contain duplicates.
+Each row of this table indicates that user_id has done a transaction of amount in transaction_date.
+It is guaranteed that the user has visited the bank in the transaction_date.(i.e The Visits table contains (user_id, transaction_date) in one row)
+ 
+
+A bank wants to draw a chart of the number of transactions bank visitors did in one visit to the bank and the corresponding number of visitors who have done this number of transaction in one visit.
+
+Write an SQL query to find how many users visited the bank and didn't do any transactions, how many visited the bank and did one transaction and so on.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/number-of-transactions-per-visit
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
