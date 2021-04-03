@@ -1,0 +1,63 @@
+step 1: calculate total amount spent by each user on each day, if the same user spent twice on the same day, then change the platform as 'both'
+step 2: join distinct spend_date and platform to create possible set for spend_date and platform
+step 3: join table from step 1 and step 2, calculate total amount and total user for each combination of spend_date and platform
+
+select
+    date.spend_date,
+    platform.platform,
+    ifnull(sum(amount), 0) as total_amount,
+    count(user_id) as total_users
+from
+(select distinct spend_date from Spending) date join
+(select 'mobile' as platform union all select 'desktop' as platform union all select 'both' as platform) platform left join
+(select
+    spend_date,
+    user_id,
+    sum(amount) as amount,
+    case when count(*) = 2 then 'both' 
+         else platform
+    end as platform
+from Spending
+group by spend_date, user_id) a on a.platform = platform.platform and a.spend_date = date.spend_date
+group by 1, 2
+
+R code:
+Spending <- data.frame(user_id = c(1, 1, 2, 2, 3, 3),
+                       spend_date = c('2019-07-01', '2019-07-01', '2019-07-01', '2019-07-02', '2019-07-01', '2019-07-02'),
+                       platform = c('mobile', 'desktop', 'mobile', 'mobile', 'desktop', 'desktop'),
+                       amount = c(100, 100, 100, 100, 100, 100)
+)
+platform <- data.frame(platform = c('mobile', 'desktop', 'both')
+)
+date_platform <- merge(platform, unique(Spending$spend_date), all = TRUE) %>% rename(spend_date = y)
+Spending <- Spending %>% group_by(spend_date, user_id) %>%
+  mutate(new_amount = sum(amount),
+         cnt = n()) 
+Spending$platform <- as.character(Spending$platform)
+Spending$platform[Spending$cnt == 2] <- 'both'
+Spending %>%
+  distinct() %>%
+  right_join(date_platform, by = c('spend_date', 'platform')) %>%
+  group_by(spend_date, platform) %>%
+  summarize(total_amount = sum(new_amount),
+            total_users = sum(!is.na(user_id))) %>%
+  replace_na(list(total_amount = 0))
+
+Table: Spending
+
++-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| user_id     | int     |
+| spend_date  | date    |
+| platform    | enum    | 
+| amount      | int     |
++-------------+---------+
+The table logs the spendings history of users that make purchases from an online shopping website which has a desktop and a mobile application.
+(user_id, spend_date, platform) is the primary key of this table.
+The platform column is an ENUM type of ('desktop', 'mobile').
+Write an SQL query to find the total number of users and the total amount spent using mobile only, desktop only and both mobile and desktop together for each date.
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/user-purchase-platform
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
