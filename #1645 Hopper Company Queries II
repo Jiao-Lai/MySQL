@@ -1,0 +1,76 @@
+step 1: create table month containing 1 to 12 consecutively
+step 2: get month info for each registered record in 2020 and before 2020, if registered before 2020, assign month as 1
+step 3: month left join table from step 2, Rides, AcceptedRides to get available drivers and number of drivers accepted rides in each month 
+step 4: use window function to calculate cumulative number of drivers by each month, and the working percentage
+note: available drivers could be 0, this will generate null working percentage
+
+with recursive month as (
+    select 1 as month union all select month + 1 as month from month where month < 12
+)
+select
+    month,
+    ifnull(round(100*active_drivers/sum(avail_drivers) over(order by month),2),0) as working_percentage  
+from
+(select
+    m.month,
+    count(distinct a.driver_id) as avail_drivers,
+    count(distinct ar.driver_id) as active_drivers
+from month m left join
+(select
+    driver_id,
+    case when year(join_date) < 2020 then 1
+         else month(join_date) 
+    end as month
+from Drivers 
+where year(join_date) <= 2020) a on m.month = a.month
+left join Rides r on m.month = month(requested_at) and year(requested_at) = 2020
+left join AcceptedRides ar on r.ride_id = ar.ride_id
+group by 1) a
+
+
+Table: Drivers
+
++-------------+---------+
+| Column Name | Type    |
++-------------+---------+
+| driver_id   | int     |
+| join_date   | date    |
++-------------+---------+
+driver_id is the primary key for this table.
+Each row of this table contains the driver's ID and the date they joined the Hopper company.
+ 
+
+Table: Rides
+
++--------------+---------+
+| Column Name  | Type    |
++--------------+---------+
+| ride_id      | int     |
+| user_id      | int     |
+| requested_at | date    |
++--------------+---------+
+ride_id is the primary key for this table.
+Each row of this table contains the ID of a ride, the user's ID that requested it, and the day they requested it.
+There may be some ride requests in this table that were not accepted.
+ 
+
+Table: AcceptedRides
+
++---------------+---------+
+| Column Name   | Type    |
++---------------+---------+
+| ride_id       | int     |
+| driver_id     | int     |
+| ride_distance | int     |
+| ride_duration | int     |
++---------------+---------+
+ride_id is the primary key for this table.
+Each row of this table contains some information about an accepted ride.
+It is guaranteed that each accepted ride exists in the Rides table.
+ 
+
+Write an SQL query to report the percentage of working drivers (working_percentage) for each month of 2020
+
+来源：力扣（LeetCode）
+链接：https://leetcode-cn.com/problems/hopper-company-queries-ii
+著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
