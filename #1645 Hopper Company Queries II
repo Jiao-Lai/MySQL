@@ -27,6 +27,43 @@ left join Rides r on m.month = month(requested_at) and year(requested_at) = 2020
 left join AcceptedRides ar on r.ride_id = ar.ride_id
 group by 1) a
 
+library(dplyr)
+library(tidyr)
+library(lubridate)
+month <- data.frame(month = seq(1:12))
+drivers <- data.frame(driver_id = c(10, 8, 5, 7, 4, 1, 6),
+                      join_date = c('2019-12-10', '2020-1-13', '2020-2-16', '2020-3-8', '2020-5-17', '2020-10-24', '2021-1-5')
+)
+rides <- data.frame(ride_id = c(6, 1, 10, 19, 3, 13, 7, 17, 20, 5, 2, 11, 15, 12, 14),
+                    requested_at = c('2019-12-9', '2020-2-9', '2020-3-4', '2020-4-6', '2020-6-3', '2020-6-22',
+                                     '2020-7-16', '2020-8-25', '2020-11-2', '2020-11-9', '2020-12-9', '2021-1-11',
+                                     '2021-1-17', '2021-1-19', '2021-1-27')
+)
+AcceptedRides <- data.frame(ride_id = c(10, 12, 7, 17, 20, 5, 2 , 11, 15, 12, 14),
+                            driver_id = c(10, 10, 8, 7, 1, 7, 4, 8, 8, 8, 1)
+                            
+)
+active_driver <- drivers %>% mutate(join_date = as.Date(join_date)) %>%
+  filter(year(join_date) <= 2020) %>%
+  mutate(month = ifelse(year(join_date) == 2020, month(join_date), 1)) %>%
+  group_by(month) %>%
+  summarize(active_driver = n_distinct(driver_id)) %>%
+  right_join(month, by = 'month') %>%
+  replace_na(list(active_driver = 0))
+rides %>% mutate(requested_at = as.Date(requested_at)) %>%
+  filter(year(requested_at) == 2020) %>%
+  mutate(month = month(requested_at)) %>%
+  inner_join(AcceptedRides, by = 'ride_id') %>%
+  group_by(month) %>%
+  summarize(n_driver = n_distinct(driver_id)) %>%
+  right_join(month, by = 'month') %>%
+  left_join(active_driver, by = 'month') %>%
+  replace_na(list(n_driver = 0)) %>%
+  mutate(driver = cumsum(active_driver),
+         working_percentage = ifelse(driver != 0, 100*n_driver/driver, 0) ) %>%
+  select(month, working_percentage)
+
+
 
 Table: Drivers
 
